@@ -30,7 +30,6 @@ if (!port) port = '3000';
 const api = express();
 let server: Server;
 api.use(bodyParser.json());
-console.log(users);
 api.use(
 	basicAuth({
 		users: users
