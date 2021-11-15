@@ -7,8 +7,15 @@ import { Encryption } from './Encryption';
 import { Hasher } from './Hasher';
 import { createConnection, getConnection, getRepository } from 'typeorm';
 import { Server } from 'net';
-config();
+import * as basicAuth from 'express-basic-auth';
 
+config();
+const consumerName = process.env.CONSUMER_NAME;
+if (!consumerName) throw new Error('No consumer nane');
+const consumerSecret = process.env.CONSUMER_SECRET;
+if (!consumerSecret) throw new Error('No consumer secret');
+const users = {} as { [username: string]: string };
+users[consumerName] = consumerSecret;
 const secretString = process.env.ENCRYPTION_SECRET;
 if (!secretString) throw new Error('No encryption secret');
 const secret = Buffer.from(secretString, 'base64');
@@ -23,6 +30,12 @@ if (!port) port = '3000';
 const api = express();
 let server: Server;
 api.use(bodyParser.json());
+console.log(users);
+api.use(
+	basicAuth({
+		users: users
+	})
+);
 api.post(
 	'/contact',
 	[body('emailAddress').isEmail().normalizeEmail()],
