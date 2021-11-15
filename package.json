@@ -1,0 +1,36 @@
+{
+  "name": "Contacts",
+  "version": "0.0.1",
+  "description": "Notify contacts",
+  "scripts": {
+    "build": "tsc --declaration",
+    "build-and-start": "yarn build; node lib/index.js",
+    "start": "node lib/index.js",
+    "test": "yarn build; node lib/__tests__/all.test.js"
+  },
+  "main": "index.js",
+  "author": "pieterjan84",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@types/express": "^4.17.1",
+    "@types/node": "^16.9.6",
+    "@types/sodium-native": "^2.3.5",
+    "@typescript-eslint/eslint-plugin": "^4.32.0",
+    "@typescript-eslint/parser": "^4.32.0",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "prettier": "^2.4.1",
+    "typescript": "^4.4.3"
+  },
+  "dependencies": {
+    "@sentry/node": "^6.14.3",
+    "body-parser": "^1.19.0",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "express-validator": "^6.13.0",
+    "pg": "^8.7.1",
+    "sodium-native": "^3.3.0",
+    "typeorm": "^0.2.40"
+  }
+}
