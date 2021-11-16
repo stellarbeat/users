@@ -8,10 +8,22 @@ import { Hasher } from './Hasher';
 import { createConnection, getConnection, getRepository } from 'typeorm';
 import { Server } from 'net';
 import * as basicAuth from 'express-basic-auth';
+import { HttpError, MailgunService } from './MailgunService';
 
 config();
+const mailgunBaseUrl = process.env.MAILGUN_BASE_URL;
+if (!mailgunBaseUrl) throw new Error('No mailgun base url');
+const mailgunSecret = process.env.MAILGUN_SECRET;
+if (!mailgunSecret) throw new Error('No mailgun secret');
+const mailgunFrom = process.env.MAILGUN_FROM;
+if (!mailgunFrom) throw new Error('No mailgun from');
+const mailgunService = new MailgunService(
+	mailgunSecret,
+	mailgunFrom,
+	mailgunBaseUrl
+);
 const consumerName = process.env.CONSUMER_NAME;
-if (!consumerName) throw new Error('No consumer nane');
+if (!consumerName) throw new Error('No consumer name');
 const consumerSecret = process.env.CONSUMER_SECRET;
 if (!consumerSecret) throw new Error('No consumer secret');
 const users = {} as { [username: string]: string };
@@ -106,7 +118,27 @@ api.post(
 		try {
 			const contact = await getRepository(Contact).findOne(req.params.userId);
 			if (!contact) return res.status(404).json({ msg: 'Contact not found' });
-			console.log(req.body.message);
+
+			const emailAddressOrError = encryption.decrypt(
+				Buffer.from(contact.emailCipher, 'base64'),
+				Buffer.from(contact.nonce, 'base64')
+			);
+			if (emailAddressOrError instanceof Error) return res.status(500);
+
+			const result = await mailgunService.sendMessage(
+				emailAddressOrError.toString(),
+				req.body.message,
+				'Notification!'
+			);
+
+			if (result instanceof HttpError) {
+				console.log(result);
+				return res.status(500);
+			}
+			//todo logging
+			if (result.status === 200)
+				return res.status(200).json({ msg: 'Message sent' });
+			else return res.status(200);
 		} catch (e) {
 			return res.status(500).json({ msg: 'Something went wrong' });
 		}
