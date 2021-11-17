@@ -1,7 +1,7 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import { body, param, validationResult } from 'express-validator';
-import { Contact } from './Contact';
+import { User } from './User';
 import { config } from 'dotenv';
 import { Encryption } from './Encryption';
 import { Hasher } from './Hasher';
@@ -48,7 +48,7 @@ api.use(
 	})
 );
 api.post(
-	'/contact',
+	'/user',
 	[body('emailAddress').isEmail().normalizeEmail()],
 	async function (req: express.Request, res: express.Response) {
 		const errors = validationResult(req);
@@ -57,14 +57,14 @@ api.post(
 		}
 		try {
 			const hash = hasher.hash(Buffer.from(req.body.emailAddress));
-			let contact = await getRepository(Contact).findOne({
+			let user = await getRepository(User).findOne({
 				where: {
 					hash: hash.toString('base64')
 				}
 			});
-			if (contact)
+			if (user)
 				return res.status(200).json({
-					contactId: contact.id
+					userId: user.id
 				});
 
 			const { cipher, nonce } = encryption.encrypt(
@@ -72,15 +72,15 @@ api.post(
 			);
 
 			//todo mailgun email address validation
-			contact = new Contact(
+			user = new User(
 				cipher.toString('base64'),
 				nonce.toString('base64'),
 				hash.toString('base64')
 			);
 
-			await contact.save();
+			await user.save();
 			return res.status(200).json({
-				contactId: contact.id
+				userId: user.id
 			});
 		} catch (e) {
 			return res.status(500).json({ msg: 'Something went wrong' });
@@ -88,7 +88,7 @@ api.post(
 	}
 );
 api.delete(
-	'/contact/:userId',
+	'/user/:userId',
 	[param('userId').isUUID(4)],
 	async function (req: express.Request, res: express.Response) {
 		console.log(req.body);
@@ -97,10 +97,10 @@ api.delete(
 			return res.status(400).json({ errors: errors.array() });
 		}
 		try {
-			const contact = await getRepository(Contact).findOne(req.params.userId);
-			if (!contact) return res.status(404).json({ msg: 'Contact not found' });
-			await contact.remove();
-			return res.status(200).json({ msg: 'Contact removed' });
+			const user = await getRepository(User).findOne(req.params.userId);
+			if (!user) return res.status(404).json({ msg: 'User not found' });
+			await user.remove();
+			return res.status(200).json({ msg: 'User removed' });
 		} catch (e) {
 			return res.status(500).json({ msg: 'Something went wrong' });
 		}
@@ -108,7 +108,7 @@ api.delete(
 );
 
 api.post(
-	'/contact/:userId/message',
+	'/user/:userId/message',
 	[param('userId').isUUID(4), body('message').isString().notEmpty()],
 	async function (req: express.Request, res: express.Response) {
 		const errors = validationResult(req);
@@ -116,12 +116,12 @@ api.post(
 			return res.status(400).json({ errors: errors.array() });
 		}
 		try {
-			const contact = await getRepository(Contact).findOne(req.params.userId);
-			if (!contact) return res.status(404).json({ msg: 'Contact not found' });
+			const user = await getRepository(User).findOne(req.params.userId);
+			if (!user) return res.status(404).json({ msg: 'User not found' });
 
 			const emailAddressOrError = encryption.decrypt(
-				Buffer.from(contact.emailCipher, 'base64'),
-				Buffer.from(contact.nonce, 'base64')
+				Buffer.from(user.emailCipher, 'base64'),
+				Buffer.from(user.nonce, 'base64')
 			);
 			if (emailAddressOrError instanceof Error) return res.status(500);
 
