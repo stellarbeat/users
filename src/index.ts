@@ -11,6 +11,14 @@ import * as basicAuth from 'express-basic-auth';
 import {HttpError, MailgunService} from './MailgunService';
 
 config();
+
+import * as Sentry from '@sentry/node'
+
+if (process.env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+    });
+}
 const mailgunBaseUrl = process.env.MAILGUN_BASE_URL;
 if (!mailgunBaseUrl) throw new Error('No mailgun base url');
 const mailgunSecret = process.env.MAILGUN_SECRET;
@@ -83,6 +91,7 @@ api.post(
                 userId: user.id
             });
         } catch (e) {
+            Sentry.captureException(e);
             return res.status(500).json({msg: 'Something went wrong'});
         }
     }
@@ -102,6 +111,7 @@ api.delete(
             await user.remove();
             return res.status(200).json({msg: 'User removed'});
         } catch (e) {
+            Sentry.captureException(e);
             return res.status(500).json({msg: 'Something went wrong'});
         }
     }
@@ -125,7 +135,10 @@ api.post(
                 Buffer.from(user.emailCipher, 'base64'),
                 Buffer.from(user.nonce, 'base64')
             );
-            if (emailAddressOrError instanceof Error) return res.status(500);
+            if (emailAddressOrError instanceof Error){
+                Sentry.captureException(emailAddressOrError);
+                return res.status(500).json({msg: 'could not decrypt email'});
+            }
 
             const result = await mailgunService.sendMessage(
                 emailAddressOrError.toString(),
@@ -134,14 +147,18 @@ api.post(
             );
 
             if (result instanceof HttpError) {
-                console.log(result);
-                return res.status(500);
+                Sentry.captureException(result);
+                return res.status(500).json({msg: result.message});
             }
-            //todo logging
+
             if (result.status === 200)
                 return res.status(200).json({msg: 'Message sent'});
-            else return res.status(200);
+            else{
+                Sentry.captureMessage(result.statusText);
+                return res.status(500).json({msg: 'Something went wrong'});
+            }
         } catch (e) {
+            Sentry.captureException(e);
             return res.status(500).json({msg: 'Something went wrong'});
         }
     }
