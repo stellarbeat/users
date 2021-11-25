@@ -27,3 +27,4 @@ if (hash.toString('base64') !== 'pqu+ZaVfVvhYDvdv6moTJKH2K63dIm999zrprpEnV8w=')
 	throw new Error('Hashing failed');
 
 console.log('Hashing succeeded');
+

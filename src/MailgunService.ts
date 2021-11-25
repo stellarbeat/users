@@ -50,7 +50,7 @@ export class MailgunService {
 
 			const axiosResponse = await axios.post(
 				this.baseUrl + '/messages',
-				`from=${this.from}&to=${to}&subject=${subject}&html=${message}`,
+				`from=${this.from}&to=${to}&subject=${subject}&html=${encodeURIComponent(message)}`,
 				config
 			);
 			clearTimeout(timeout);
@@ -74,6 +74,7 @@ export class MailgunService {
 		};
 	}
 	protected mapAxiosErrorToHttpError(axiosError: AxiosError): HttpError {
+		console.log(axiosError.request)
 		return new HttpError(
 			axiosError.message + ': ' + axiosError.response?.statusText,
 			axiosError.code,
