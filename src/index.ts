@@ -147,14 +147,24 @@ api.post(
             );
 
             if (result instanceof HttpError) {
-                Sentry.captureException(result);
+                console.error(result.message, result.response?.statusText, result.response?.data);
+                Sentry.captureException(result, {
+                    extra: {
+                        data: result.response?.data,
+                        status: result.response?.statusText
+                    }
+                });
                 return res.status(500).json({msg: result.message});
             }
 
             if (result.status === 200)
                 return res.status(200).json({msg: 'Message sent'});
             else{
-                Sentry.captureMessage(result.statusText);
+                Sentry.captureMessage(result.statusText, {
+                    extra: {
+                        data: result.data,
+                    }
+                });
                 return res.status(500).json({msg: 'Something went wrong'});
             }
         } catch (e) {

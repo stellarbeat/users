@@ -75,7 +75,7 @@ export class MailgunService {
 	}
 	protected mapAxiosErrorToHttpError(axiosError: AxiosError): HttpError {
 		return new HttpError(
-			axiosError.message,
+			axiosError.message + ': ' + axiosError.response?.statusText,
 			axiosError.code,
 			axiosError.response
 		);
