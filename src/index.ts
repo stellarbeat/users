@@ -13,6 +13,7 @@ import {HttpError, MailgunService} from './MailgunService';
 config();
 
 import * as Sentry from '@sentry/node'
+import helmet = require("helmet");
 
 if (process.env.SENTRY_DSN) {
     Sentry.init({
@@ -49,6 +50,7 @@ if (!port) port = '3000';
 
 const api = express();
 let server: Server;
+api.use(helmet());
 api.use(bodyParser.json());
 api.use(
     basicAuth({
