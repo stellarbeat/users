@@ -1,12 +1,13 @@
 import {
 	crypto_generichash_KEYBYTES,
-	crypto_secretbox_KEYBYTES,
+	crypto_secretbox_KEYBYTES, randombytes_buf,
 	sodium_malloc
 } from 'sodium-native';
 import { Encryption } from '../Encryption';
 import { Hasher } from '../Hasher';
 
 const key = sodium_malloc(crypto_secretbox_KEYBYTES); // secure buffer
+randombytes_buf(key);
 const message = 'home@home.com';
 const messageBuffer = Buffer.from(message);
 
