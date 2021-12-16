@@ -15,7 +15,7 @@ export class User extends BaseEntity {
 	@Column({ type: 'varchar' })
 	public nonce: string;
 
-	@Index()
+	@Index({ unique: true })
 	@Column({ type: 'varchar' })
 	public hash: string;
 
