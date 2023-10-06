@@ -98,6 +98,33 @@ api.post(
         }
     }
 );
+api.post(
+    '/user/find',
+    [body('emailAddress').isEmail().normalizeEmail().withMessage('must be valid email address')],
+    async function (req: express.Request, res: express.Response) {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({errors: errors.array()});
+        }
+        try {
+            const hash = hasher.hash(Buffer.from(req.body.emailAddress));
+            let user = await getRepository(User).findOne({
+                where: {
+                    hash: hash.toString('base64')
+                }
+            });
+            if (user)
+                return res.status(200).json({
+                    userId: user.id
+                });
+
+            return res.status(404).json({msg: 'User not found'});
+        } catch (e) {
+            Sentry.captureException(e);
+            return res.status(500).json({msg: 'Something went wrong'});
+        }
+    }
+);
 api.delete(
     '/user/:userId',
     [param('userId').isUUID(4).withMessage('must be uuid v4')],
